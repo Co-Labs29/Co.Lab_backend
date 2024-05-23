@@ -1,13 +1,10 @@
 from app.models import Parent, Child, db
 from flask import  Blueprint, request, jsonify, redirect, url_for
 import logging
-from flask_login import login_user, logout_user, LoginManager, current_user
+from flask_login import login_user, logout_user, LoginManager, current_user, login_required
 from werkzeug.security import check_password_hash
 
-
 auth = Blueprint('auth', __name__, template_folder='auth_templates')
-
-login_manager = LoginManager()
 
 
 @auth.route('/parent_signup', methods=['POST'])
@@ -95,7 +92,7 @@ def child_signup():
     try:
         data = request.get_json()
         logging.info(f"Received data: {data}")
-        print(current_user.id)
+        print(current_user)
         if data.get("role") == "child":
             parent_id = current_user.id
             first_name = data.get("first_name")
@@ -121,6 +118,9 @@ def child_signup():
         return jsonify({"error": f"Invalid form data: {str(e)}"}), 400
     
 #  stores the parent_id whenever the user is logged in
-@login_manager.user_loader
-def load_user(user_id):
-    return Parent.query.get(int(user_id))
+
+
+@auth.route("/test")
+@login_required
+def test():
+    return jsonify({"message": "User is logged in!"})
