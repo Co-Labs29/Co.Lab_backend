@@ -60,7 +60,7 @@ def signin():
                 return jsonify({"message": "Email, password, and role are required"}), 400
 
             
-            logged_user = Parent.query.filter_by(email=email, role=role.lower()).first()
+            logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
             print(f"User found: {logged_user}")
 
             if logged_user and check_password_hash(logged_user.password, password):
