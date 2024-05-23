@@ -47,6 +47,7 @@ def parent_signin():
             email = data.get("email")
             password = data.get("password")
             role = data.get("role")
+            print("current user =>>>", current_user)
 
             
             print(f"Received data - Email: {email}, Password: {password}, Role: {role}")
@@ -59,9 +60,10 @@ def parent_signin():
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
             print(f"User found: {logged_user.id}")
 
+
             if logged_user and check_password_hash(logged_user.password, password):
                 login_user(logged_user)
-                print(current_user)
+                print("current USer ==>>>>>>>>>>>>", current_user.id)
 
                 print("User logged in successfully")
 
@@ -92,16 +94,15 @@ def child_signup():
     try:
         data = request.get_json()
         logging.info(f"Received data: {data}")
-        print(current_user)
+        print("current user =>>>", current_user)
         if data.get("role") == "child":
             parent_id = current_user.id
-            first_name = data.get("first_name")
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
             if len(password) < 7:
                 return jsonify({'message': "Password must be at least 7 characters long"})
-            if not first_name or not username or not password or not role:
+            if not username or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
             child = Child(parent_id=parent_id, username=username, password=password, role=role)
 
