@@ -1,14 +1,17 @@
-from app.models import Parent,db
+from app.models import Parent, Child, db
 from flask import  Blueprint, request, jsonify, redirect, url_for
 import logging
-from flask_login import login_user, logout_user, LoginManager
+from flask_login import login_user, logout_user, LoginManager, current_user
 from werkzeug.security import check_password_hash
+
 
 auth = Blueprint('auth', __name__, template_folder='auth_templates')
 
+login_manager = LoginManager()
 
-@auth.route('/signup', methods=['POST'])
-def signup():
+
+@auth.route('/parent_signup', methods=['POST'])
+def parent_signup():
     logging.info(f"Request method: {request.method}")
     try:
         data = request.get_json()
@@ -24,7 +27,6 @@ def signup():
             if not first_name or not email or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
             parent = Parent(first_name=first_name, email=email, password=password, role=role)
-
             parent.save()
 
             return jsonify({"message": f"User account {email} created successfully"}), 201
@@ -39,12 +41,9 @@ def signup():
 
 
 
-login_manager = LoginManager()
-login_manager.login_view = 'auth.signin'  
-login_manager.login_message = "Please login to access this page"
 
-@auth.route('/signin', methods=['POST'])
-def signin():
+@auth.route('/parent_signin', methods=['POST'])
+def parent_signin():
     if request.method == 'POST':
         try:
             data = request.get_json()
@@ -61,11 +60,14 @@ def signin():
 
             
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
-            print(f"User found: {logged_user}")
+            print(f"User found: {logged_user.id}")
 
             if logged_user and check_password_hash(logged_user.password, password):
                 login_user(logged_user)
+                print(current_user)
+
                 print("User logged in successfully")
+
                 return "User logged in"
             else:
                 print("Invalid credentials")
@@ -82,7 +84,43 @@ def signin():
 
     return jsonify({"message": "Invalid request method"}), 405
     
-@auth.route('/logout')
-def logout():
+@auth.route('/parent_logout')
+def parent_logout():
     logout_user()
     return "Logged out"
+
+@auth.route("/child_signup", methods= ["POST"])
+def child_signup():
+    logging.info(f"Request method: {request.method}")
+    try:
+        data = request.get_json()
+        logging.info(f"Received data: {data}")
+        print(current_user.id)
+        if data.get("role") == "child":
+            parent_id = current_user.id
+            first_name = data.get("first_name")
+            username = data.get("username")
+            password = data.get("password")
+            role = data.get("role")
+            if len(password) < 7:
+                return jsonify({'message': "Password must be at least 7 characters long"})
+            if not first_name or not username or not password or not role:
+                return jsonify({"error": "All fields are required"}), 400
+            child = Child(parent_id=parent_id, username=username, password=password, role=role)
+
+            child.save()
+            print("working ===>", child)
+            return jsonify({"message": f"User account {username} created successfully"}), 201
+
+        else:
+            return jsonify({"error": "Invalid role"}), 400
+
+    except KeyError as e:
+        return jsonify({"error": f"Missing key: {e.args[0]}"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Invalid form data: {str(e)}"}), 400
+    
+#  stores the parent_id whenever the user is logged in
+@login_manager.user_loader
+def load_user(user_id):
+    return Parent.query.get(int(user_id))
