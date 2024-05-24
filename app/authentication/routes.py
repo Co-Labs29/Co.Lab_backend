@@ -47,8 +47,6 @@ def parent_signin():
             email = data.get("email")
             password = data.get("password")
             role = data.get("role")
-            print("current user =>>>", current_user)
-
             
             print(f"Received data - Email: {email}, Password: {password}, Role: {role}")
 
@@ -63,7 +61,7 @@ def parent_signin():
 
             if logged_user and check_password_hash(logged_user.password, password):
                 login_user(logged_user)
-                print("current USer ==>>>>>>>>>>>>", current_user.id)
+                # print("current USer ==>>>>>>>>>>>>", current_user.id)
 
                 print("User logged in successfully")
 
@@ -89,22 +87,29 @@ def parent_logout():
     return "Logged out"
 
 @auth.route("/child_signup", methods= ["POST"])
+@login_required
 def child_signup():
+    print("In the child route")
     logging.info(f"Request method: {request.method}")
     try:
         data = request.get_json()
         logging.info(f"Received data: {data}")
-        print("current user =>>>", current_user)
-        if data.get("role") == "child":
+        print("current user CHILD =>>>", current_user.id)
+        if data.get("role") == "Child":
             parent_id = current_user.id
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
+            print("Got data!")
+
             if len(password) < 7:
                 return jsonify({'message': "Password must be at least 7 characters long"})
             if not username or not password or not role:
-                return jsonify({"error": "All fields are required"}), 400
+                return jsonify({"message": "All fields are required"}), 400
+            print("Before creating child!")
+            
             child = Child(parent_id=parent_id, username=username, password=password, role=role)
+            print("after creating child!")
 
             child.save()
             print("working ===>", child)
