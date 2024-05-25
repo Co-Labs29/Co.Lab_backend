@@ -22,4 +22,6 @@ login_manager = LoginManager()
 def load_user(user_id):
     return Parent.query.get(int(user_id))
 
+
+
 login_manager.init_app(app)
