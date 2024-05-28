@@ -66,10 +66,10 @@ def parent_signin():
                 login_user(logged_user)
 
                 print("User logged in successfully")
-                print("current USer ==>>>>>>>>>>>>", current_user)
+                print("current User ==>>>>>>>>>>>>", current_user)
+                print(current_user.first_name)
 
-
-                return "User logged in"
+                return jsonify({"message": "User logged in", "firstName": current_user.first_name})
             else:
                 print("Invalid credentials")
                 return jsonify({"message": "Invalid credentials"}), 401
