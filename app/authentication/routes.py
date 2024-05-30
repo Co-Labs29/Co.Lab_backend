@@ -2,7 +2,7 @@ from app.models import Parent, Child, db
 from flask import  Blueprint, request, jsonify, redirect, url_for
 import logging
 from flask_login import login_user, logout_user, current_user, login_required
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 auth = Blueprint('auth', __name__, template_folder='auth_templates')
 
@@ -26,8 +26,11 @@ def parent_signup():
                 return jsonify({'message': "Password must be at least 7 characters long"})
             if not first_name or not email or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
-            new_parent = Parent(first_name=first_name, email=email, password=password, role=role)
-            new_parent.save()
+            
+            hashed_password = generate_password_hash(password)
+            new_parent = Parent(first_name=first_name, email=email, password=hashed_password, role=role)
+            db.session.add(new_parent)
+            db.session.commit()
 
             return jsonify({"message": f"User account {email} created successfully"}), 201
 
@@ -38,9 +41,6 @@ def parent_signup():
         return jsonify({"error": f"Missing key: {e.args[0]}"}), 400
     except Exception as e:
         return jsonify({"error": f"Invalid form data: {str(e)}"}), 400
-
-
-
 
 @auth.route('/parent_signin', methods=['POST'])
 def parent_signin():
@@ -57,51 +57,44 @@ def parent_signin():
                 print("Missing email, password, or role")
                 return jsonify({"message": "Email, password, and role are required"}), 400
 
-            
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
             print(f"User found: {logged_user.id}")
-
 
             if logged_user and check_password_hash(logged_user.password, password):
                 login_user(logged_user)
 
                 print("User logged in successfully")
                 print("current USer ==>>>>>>>>>>>>", current_user)
+                print(f"current ParentID {current_user.id}")
 
-
-                return "User logged in"
+                return jsonify({"message": "Login successful", "firstName": current_user.first_name, "parentID": logged_user.id}), 200
             else:
                 print("Invalid credentials")
                 return jsonify({"message": "Invalid credentials"}), 401
 
         except KeyError as e:
-            
             print(f"KeyError: {e}")
             return jsonify({"message": "Invalid form data: Missing key"}), 400
         except Exception as e:
-            
             print(f"Exception: {e}")
             return jsonify({"message": "An error occurred"}), 500
 
     return jsonify({"message": "Invalid request method"}), 405
     
 @auth.route('/parent_logout')
-@login_required
 def parent_logout():
     logout_user()
     return "Logged out"
 
 @auth.route("/child_signup", methods= ["POST"])
-@login_required
 def child_signup():
     print("In the child route")
     logging.info(f"Request method: {request.method}")
     try:
         data = request.get_json()
         logging.info(f"Received data: {data}")
-        print("current user CHILD =>>>", current_user.id)
         if data.get("role") == "Child":
-            parent_id = current_user.id
+            parent_id = data.get("parent_id")
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
