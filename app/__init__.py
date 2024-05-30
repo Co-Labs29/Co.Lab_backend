@@ -16,7 +16,7 @@ app.register_blueprint(auth)
 
 db.init_app(app)
 migrate = Migrate(app, db)
-login_manager = LoginManager()
+login_manager = LoginManager(app)
 
 @login_manager.user_loader
 def load_user(user_id):
