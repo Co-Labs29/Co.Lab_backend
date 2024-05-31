@@ -126,29 +126,24 @@ def child_signup():
 def child_login():
     print("MADE IT")
     if request.method == "POST":
-        try:
+        
             data = request.get_json()
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
+            print(data)
             if not username or not password or not role:
                 print("Missing email, password, or role")
                 return jsonify({"message": "Email, password, and role are required"}), 400
             child = Child.query.filter(Child.username == username).first()
-            if child and check_password_hash(child.password, password):
+            print(child)
+            if child and child.password == password:
                 login_user(child)
-                print(current_user.username)
-
+                print("User logged in successfully")
                 print("CURRENT CHILD", current_user.id)
 
+
                 return jsonify({"message": "Login Successful"}), 200
-        except KeyError as e:
-                
-            print(f"KeyError: {e}")
-            return jsonify({"message": "Invalid form data: Missing key"}), 400
-        except Exception as e:
-            print(f"Exception: {e}")
-            return jsonify({"message": "An error occurred"}), 500
 
 @auth.route("/test")
 @login_required
