@@ -1,5 +1,5 @@
 from app.models import Parent, Child, db
-from flask import  Blueprint, request, jsonify, redirect, url_for
+from flask import  Blueprint, request, jsonify
 import logging
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -28,7 +28,7 @@ def parent_signup():
                 return jsonify({"error": "All fields are required"}), 400
             
             hashed_password = generate_password_hash(password)
-            new_parent = Parent(first_name=first_name, email=email, password=hashed_password, role=role)
+            new_parent = Parent(first_name, email, hashed_password, role)
             db.session.add(new_parent)
             db.session.commit()
 
@@ -58,14 +58,16 @@ def parent_signin():
                 return jsonify({"message": "Email, password, and role are required"}), 400
 
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
-            print(f"User found: {logged_user.id}")
+            print(f"User found: {logged_user}")
 
             if logged_user and check_password_hash(logged_user.password, password):
+                print("User logged in successfully", logged_user)
+                
+
                 login_user(logged_user)
 
-                print("User logged in successfully")
                 print("current USer ==>>>>>>>>>>>>", current_user)
-                print(f"current ParentID {current_user.id}")
+                print(f"current ParentID {current_user}")
 
                 return jsonify({"message": "Login successful", "firstName": current_user.first_name, "parentID": logged_user.id}), 200
             else:
@@ -154,3 +156,8 @@ def child_login():
 @login_required
 def test():
     return jsonify({"message": "User is logged in!"})
+
+@auth.route('/parents', methods=['GET'])
+def get_parents():
+    parents = Parent.query.all()
+    return jsonify([parent.to_dict() for parent in parents])

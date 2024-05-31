@@ -14,14 +14,15 @@ CORS(app)
 app.register_blueprint(auth)
 
 
-db.init_app(app)
 migrate = Migrate(app, db)
 login_manager = LoginManager(app)
+login_manager.init_app(app)
+db.init_app(app)
+
+
 
 @login_manager.user_loader
 def load_user(user_id):
     return Parent.query.get(int(user_id))
 
 
-
-login_manager.init_app(app)
