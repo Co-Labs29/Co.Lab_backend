@@ -67,6 +67,10 @@ def get_balance(child_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+
+    
+
 @site.route('/goal_balance/<int:child_id>', methods=['GET'])
 def goal_balance(child_id):
     try:
@@ -152,6 +156,12 @@ def delete_goal(goal_id):
         return jsonify({'Message': str(e)}), 500
     
 
+
+
+
+
+
+
 @site.route('/child_info/<int:child_id>', methods=['GET'])
 def get_child_info(child_id):
     try:
@@ -178,6 +188,7 @@ def get_child_info(child_id):
         child_info = {
             "child_id": child.id,
             "username": child.username,
+            "img": child.img,
             "wallet": {
                 "amount": wallet.amount,
                 "goal_account": wallet.goal_account

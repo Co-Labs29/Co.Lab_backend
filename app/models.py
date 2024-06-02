@@ -20,7 +20,8 @@ class Child(db.Model, UserMixin):
     parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'), nullable=False)
     username = db.Column(db.String, unique=True, nullable=False)
     password = db.Column(db.String, nullable=False)
-    role = db.Column(db.String(10), nullable=False, default="child")  # "parent or child"
+    role = db.Column(db.String(10), nullable=False, default="child")
+    img = db.Column(db.String, nullable=True) 
     chores = db.relationship('Chores', backref='child', lazy=True)
     wallet = db.relationship('Wallet', uselist=False, back_populates='child')
     goals = db.relationship('Goal', back_populates='child', lazy=True)
