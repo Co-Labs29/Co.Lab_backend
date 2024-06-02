@@ -84,3 +84,26 @@ def goal_balance(child_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+@site.route('/create_goal/<int:child_id>', methods=['POST'])
+def create_goal(child_id):
+    try:
+        data = request.get_json()
+        name = data.get("name")
+        amount = float(data.get("amount"))
+
+        child = Child.query.get(child_id)
+        if not child:
+            return jsonify({"error": "Child not found"}), 404
+        
+        wallet = child.wallet
+        if not wallet:
+            return jsonify({"error": "Could not find wallet"}), 404
+        
+        goals = Goals(name=name, amount=amount, wallet_id=wallet.id, child_id=child.id)
+        goals.save()
+
+        return jsonify({"message": "Goal created successfully"}), 201
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
