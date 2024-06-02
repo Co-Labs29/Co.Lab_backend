@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import Child
+from app.models import Child, Goal, db
 
 
 site = Blueprint('site', __name__)
@@ -84,3 +84,108 @@ def goal_balance(child_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
+@site.route('/create_goal/<int:child_id>', methods=['POST'])
+def create_goal(child_id):
+    try:
+        data = request.get_json()
+        name = data.get("name")
+        amount = float(data.get("amount"))
+        img = data.get("img")
+        link = data.get('link')
+        description = data.get('description')
+
+        child = Child.query.get(child_id)
+        if not child:
+            return jsonify({"error": "Child not found"}), 404
+        
+        wallet = child.wallet
+        if not wallet:
+            return jsonify({"error": "Could not find wallet"}), 404
+        
+        goal = Goal(name=name, amount=amount, img=img, link=link, description=description, wallet_id=wallet.id, child_id=child.id)
+        goal.save()
+
+        return jsonify({"message": "Goal created successfully"}), 201
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@site.route('/update_goal/<int:goal_id>', methods=['PUT'])
+def update_goal(goal_id):
+    try:
+        data = request.get_json()
+        new_name = data.get("name")
+        new_amount = float(data.get("amount"))
+        new_img = data.get("img")
+        new_link = data.get("link")
+        new_description = data.get("description")
+
+        goal = Goal.query.get(goal_id)
+        if not goal:
+            return jsonify({"error": "Could not find goal"}), 404
+    
+        goal.name = new_name
+        goal.amount = new_amount
+        goal.img = new_img
+        goal.link = new_link
+        goal.description = new_description
+        goal.save()
+
+        return jsonify({"message": "Goal updated successsfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@site.route("/delete_goal/<int:goal_id>", methods=["DELETE"])
+def delete_goal(goal_id):
+    try: 
+        goal = Goal.query.get(goal_id)
+        if not goal:
+            return jsonify({"error": "Goal not found"}), 404
+
+        db.session.delete(goal)
+        db.session.commit()
+
+        return jsonify({"message": "Goal deleted successfully"}), 200
+    
+    except Exception as e:
+        return jsonify({'Message': str(e)}), 500
+    
+
+@site.route('/child_info/<int:child_id>', methods=['GET'])
+def get_child_info(child_id):
+    try:
+        child = Child.query.get(child_id)
+        if not child:
+            return jsonify({"error": "Child not found"}), 404
+
+        wallet = child.wallet
+        if not wallet:
+            return jsonify({"error": "Wallet not found"}), 404
+
+        goals = Goal.query.filter_by(child_id=child_id).all()
+        goals_info = [
+            {
+                "id": goal.id,
+                "name": goal.name,
+                "amount": goal.amount,
+                "img": goal.img,
+                "link": goal.link,
+                "description": goal.description
+            } for goal in goals
+        ]
+
+        child_info = {
+            "child_id": child.id,
+            "username": child.username,
+            "wallet": {
+                "amount": wallet.amount,
+                "goal_account": wallet.goal_account
+            },
+            "goals": goals_info
+        }
+
+        return jsonify(child_info), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
