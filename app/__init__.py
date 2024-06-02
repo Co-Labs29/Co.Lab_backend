@@ -5,6 +5,7 @@ from app.models import db, Parent
 from .authentication.routes import auth
 from flask_cors import CORS
 from flask_login import LoginManager
+from .site.routes import site
 
 app = Flask(__name__)
 
@@ -12,6 +13,7 @@ app.config.from_object(Config)
 CORS(app)
 
 app.register_blueprint(auth)
+app.register_blueprint(site)
 
 
 db.init_app(app)
