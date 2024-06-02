@@ -1,5 +1,5 @@
-from app.models import Parent, Child, db
-from flask import  Blueprint, request, jsonify, redirect, url_for
+from app.models import Parent, Child, db, Wallet
+from flask import  Blueprint, request, jsonify
 import logging
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -99,7 +99,7 @@ def child_signup():
             password = data.get("password")
             role = data.get("role")
             print("Got data!")
-            print(f"Received data - Email: {username}, Password: {password}, Role: {role}")
+            print(f"Received data - username: {username}, Password: {password}, Role: {role}")
 
             if len(password) < 7:
                 return jsonify({'message': "Password must be at least 7 characters long"})
@@ -112,7 +112,12 @@ def child_signup():
 
             child.save()
             print("working ===>", child)
-            return jsonify({"message": f"User account {username} created successfully"}), 201
+
+            wallet = Wallet(child_id=child.id, amount=0.0)
+            print(f'wallet {wallet.amount}')
+            wallet.save()
+
+            return jsonify({"message": f"User account {username} created successfully", "child_id": child.id}), 201
 
         else:
             return jsonify({"error": "Invalid role"}), 400

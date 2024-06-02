@@ -30,6 +30,7 @@ class Child(db.Model, UserMixin):
     password = db.Column(db.String, nullable = False)
     role = db.Column(db.String(10), nullable=False, default="child") # "parent or child"
     chores = db.relationship('Chores', backref='child', lazy=True)
+    wallet = db.relationship('Wallet', uselist=False, back_populates='child')
 
     # def __init__(self, id, parent_id, username, password, role):
     #     self.id = id
@@ -60,8 +61,35 @@ class Chores(db.Model):
         db.session.commit()
 
 
+class Wallet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False, default=0.0)
+    goal_account = db.Column(db.Float, nullable=False, default=0.0)
+    child = db.relationship('Child', back_populates='wallet')
 
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
+    def add_amount(self, amount):
+        self.amount += amount
+        self.save()
+
+    def sub_amount(self, amount):
+        self.amount -= amount
+
+    def get_balance(self):
+        return self.amount
+    
+    def transfer_amount(self, amount):
+       if self.amount >= amount:
+           self.amount -= amount
+           self.goal_account += amount
+           self.save()
+           return True
+       return False
+    
 
 
 
