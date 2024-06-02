@@ -31,6 +31,7 @@ class Child(db.Model, UserMixin):
     role = db.Column(db.String(10), nullable=False, default="child") # "parent or child"
     chores = db.relationship('Chores', backref='child', lazy=True)
     wallet = db.relationship('Wallet', uselist=False, back_populates='child')
+    goals = db.relationship('Goal', back_populates='child', lazy=True)
 
     # def __init__(self, id, parent_id, username, password, role):
     #     self.id = id
@@ -67,6 +68,7 @@ class Wallet(db.Model):
     amount = db.Column(db.Float, nullable=False, default=0.0)
     goal_account = db.Column(db.Float, nullable=False, default=0.0)
     child = db.relationship('Child', back_populates='wallet')
+    goals =db.relationship('Goal', back_populates='wallet', lazy=True)
 
     def save(self):
         db.session.add(self)
@@ -93,3 +95,15 @@ class Wallet(db.Model):
 
 
 
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=False)
+    name = db.Column(db.String, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    wallet_id = db.Column(db.Integer, db.ForeignKey('wallet.id'), nullable=False)
+    wallet = db.relationship('Wallet', backref='goals', lazy=True)
+    child = db.relationship('Child', back_populates='goals')
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
