@@ -63,11 +63,14 @@ def parent_signin():
             if logged_user and check_password_hash(logged_user.password, password):
                 login_user(logged_user)
 
+                child_ids = [child.id for child in logged_user.children]
+                print(child_ids)
+
                 print("User logged in successfully")
                 print("current USer ==>>>>>>>>>>>>", current_user)
                 print(f"current ParentID {current_user.id}")
 
-                return jsonify({"message": "Login successful", "firstName": current_user.first_name, "parentID": logged_user.id}), 200
+                return jsonify({"message": "Login successful", "firstName": current_user.first_name, "parentID": logged_user.id, "childIDs": child_ids}), 200
             else:
                 print("Invalid credentials")
                 return jsonify({"message": "Invalid credentials"}), 401
@@ -80,6 +83,7 @@ def parent_signin():
             return jsonify({"message": "An error occurred"}), 500
 
     return jsonify({"message": "Invalid request method"}), 405
+
     
 @auth.route('/parent_logout')
 def parent_logout():
@@ -98,6 +102,7 @@ def child_signup():
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
+            img = data.get("img")
             print("Got data!")
             print(f"Received data - username: {username}, Password: {password}, Role: {role}")
 
@@ -107,7 +112,7 @@ def child_signup():
                 return jsonify({"message": "All fields are required"}), 400
             print("Before creating child!")
             
-            child = Child(parent_id=parent_id, username=username, password=password, role=role)
+            child = Child(parent_id=parent_id, username=username, password=password, role=role, img=img)
             print("after creating child!")
 
             child.save()

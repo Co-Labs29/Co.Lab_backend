@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.models import Child, Goal, db
+from app.models import Child, Goal, db, Parent
+from flask_login import current_user
 
 
 site = Blueprint('site', __name__)
@@ -156,6 +157,35 @@ def delete_goal(goal_id):
         return jsonify({'Message': str(e)}), 500
     
 
+@site.route('/info', methods=['GET'])
+def get_info():
+    parent = Parent.query.get(current_user.id)
+    if not parent:
+        return jsonify({"error": "Parent not found"}), 404
+    
+    children = Child.query.filter_by(parent_id=current_user.id).all()
+    if not children:
+        return jsonify({"error": "Children not found"}), 404
+
+    child_info = []
+    for child in children:
+        child_info.append({
+            "child_id": child.id,
+            "username": child.username,
+            "img": child.img,
+            "role": child.role,
+            "chores": [chore.name for chore in child.chores],  
+            "wallet": {
+                "amount": child.wallet.amount
+            },
+            "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "description": goal.description, "img": goal.img, 
+                        "link": goal.link } for goal in child.goals]  
+        })
+
+    return jsonify(child_info), 200
+
+
+
 
 
 
@@ -200,3 +230,5 @@ def get_child_info(child_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
