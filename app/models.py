@@ -29,6 +29,15 @@ class Child(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'parent_id': self.parent_id,
+            'username': self.username,
+            'role': self.role
+        }
+    
+
 class Chores(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     child_id = db.Column(db.Integer, db.ForeignKey("child.id"), nullable=False)
