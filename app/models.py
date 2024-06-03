@@ -44,6 +44,7 @@ class Chores(db.Model):
     name = db.Column(db.String, nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     frequency = db.Column(db.String, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)
 
     def save(self):
         db.session.add(self)

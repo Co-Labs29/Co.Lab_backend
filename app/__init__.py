@@ -7,6 +7,7 @@ from flask_cors import CORS
 from flask_login import LoginManager
 from .site.routes import site
 from .Parents.parent_routes import parents
+from .Chores.routes import chores
 
 app = Flask(__name__)
 
@@ -16,6 +17,7 @@ CORS(app)
 app.register_blueprint(auth)
 app.register_blueprint(site)
 app.register_blueprint(parents)
+app.register_blueprint(chores)
 
 
 db.init_app(app)
