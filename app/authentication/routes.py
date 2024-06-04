@@ -1,14 +1,11 @@
-from app.models import Parent, Child, db, Wallet
-from flask import  Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 import logging
-from flask_login import login_user, logout_user, current_user, login_required
-from werkzeug.security import check_password_hash, generate_password_hash
+import jwt
+from datetime import datetime, timedelta
+from app.models import Parent, Child, db, Wallet
+import pytz
 
-auth = Blueprint('auth', __name__, template_folder='auth_templates')
-
-
-
-
+auth = Blueprint('auth', __name__)
 
 @auth.route('/parent_signup', methods=['POST'])
 def parent_signup():
@@ -23,16 +20,24 @@ def parent_signup():
             password = data.get("password")
             role = data.get("role")
             if len(password) < 7:
-                return jsonify({'message': "Password must be at least 7 characters long"})
+                return jsonify({'message': "Password must be at least 7 characters long"}), 400
             if not first_name or not email or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
-            
-            hashed_password = generate_password_hash(password)
-            new_parent = Parent(first_name=first_name, email=email, password=hashed_password, role=role)
+
+            new_parent = Parent(first_name=first_name, email=email, password=password, role=role)
             db.session.add(new_parent)
             db.session.commit()
 
-            return jsonify({"message": f"User account {email} created successfully"}), 201
+            token_payload = {
+                "sub": new_parent.id,
+                "exp": datetime.now(pytz.utc) + timedelta(hours=1)
+            }
+            jwt_token = jwt.encode(token_payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
+
+            return jsonify({
+                "message": f"User account {email} created successfully",
+                "token": jwt_token
+            }), 201
 
         else:
             return jsonify({"error": "Invalid role"}), 400
@@ -50,79 +55,82 @@ def parent_signin():
             email = data.get("email")
             password = data.get("password")
             role = data.get("role")
-            
-            print(f"Received data - Email: {email}, Password: {password}, Role: {role}")
 
             if not email or not password or not role:
-                print("Missing email, password, or role")
                 return jsonify({"message": "Email, password, and role are required"}), 400
 
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
-            print(f"User found: {logged_user.id}")
 
-            if logged_user and check_password_hash(logged_user.password, password):
-                login_user(logged_user)
-
+            if logged_user and logged_user.password == password:  # Assuming plain text password for simplicity
                 child_ids = [child.id for child in logged_user.children]
-                print(child_ids)
 
-                print("User logged in successfully")
-                print("current USer ==>>>>>>>>>>>>", current_user)
-                print(f"current ParentID {current_user.id}")
+                expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+                payload = {
+                    'sub': logged_user.id,
+                    'exp': expiration,
+                    'role': logged_user.role
+                }
+                token = jwt.encode(payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
 
-                return jsonify({"message": "Login successful", "firstName": current_user.first_name, "parentID": logged_user.id, "childIDs": child_ids}), 200
+                return jsonify({
+                    "message": "Login successful",
+                    "firstName": logged_user.first_name,
+                    "parentID": logged_user.id,
+                    "childIDs": child_ids,
+                    "token": token
+                }), 200
             else:
-                print("Invalid credentials")
                 return jsonify({"message": "Invalid credentials"}), 401
 
         except KeyError as e:
-            print(f"KeyError: {e}")
-            return jsonify({"message": "Invalid form data: Missing key"}), 400
+            return jsonify({"error": str(e)}), 400
         except Exception as e:
-            print(f"Exception: {e}")
-            return jsonify({"message": "An error occurred"}), 500
+            return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "Invalid request method"}), 405
 
-    
 @auth.route('/parent_logout')
 def parent_logout():
-    logout_user()
     return "Logged out"
 
-@auth.route("/child_signup", methods= ["POST"])
+@auth.route("/child_signup", methods=["POST"])
 def child_signup():
-    print("In the child route")
-    logging.info(f"Request method: {request.method}")
     try:
         data = request.get_json()
-        logging.info(f"Received data: {data}")
+
         if data.get("role") == "Child":
             parent_id = data.get("parent_id")
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
-            img = data.get("img")
-            print("Got data!")
-            print(f"Received data - username: {username}, Password: {password}, Role: {role}")
+            img = data.get('img')
 
             if len(password) < 7:
-                return jsonify({'message': "Password must be at least 7 characters long"})
+                return jsonify({'message': "Password must be at least 7 characters long"}), 400
             if not username or not password or not role:
                 return jsonify({"message": "All fields are required"}), 400
-            print("Before creating child!")
-            
-            child = Child(parent_id=parent_id, username=username, password=password, role=role, img=img)
-            print("after creating child!")
 
-            child.save()
-            print("working ===>", child)
+            child = Child(parent_id=parent_id, username=username, password=password, role=role, img=img)
+            print(f'child: {child}')
+            db.session.add(child)
+            db.session.commit()
 
             wallet = Wallet(child_id=child.id, amount=0.0)
-            print(f'wallet {wallet.amount}')
             wallet.save()
 
-            return jsonify({"message": f"User account {username} created successfully", "child_id": child.id}), 201
+            expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+            payload = {
+                'sub': child.id,
+                'exp': expiration,
+                'role': child.role
+            }
+            token = jwt.encode(payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
+
+            return jsonify({
+                "message": f"User account {username} created successfully",
+                "child_id": child.id,
+                "token": token
+            }), 201
 
         else:
             return jsonify({"error": "Invalid role"}), 400
@@ -132,30 +140,39 @@ def child_signup():
     except Exception as e:
         return jsonify({"error": f"Invalid form data: {str(e)}"}), 400
     
+
+
 @auth.route("/child_login", methods=["POST"])
 def child_login():
-    print("MADE IT")
     if request.method == "POST":
-        
+        try:
             data = request.get_json()
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
-            print(data)
+
             if not username or not password or not role:
-                print("Missing email, password, or role")
-                return jsonify({"message": "Email, password, and role are required"}), 400
-            child = Child.query.filter(Child.username == username).first()
-            print(child)
-            if child and child.password == password:
-                login_user(child)
-                print("User logged in successfully")
-                print("CURRENT CHILD", current_user.id)
+                return jsonify({"message": "Username, password, and role are required"}), 400
+
+            child = Child.query.filter_by(username=username).first()
+            if child and child.password == password:  # Assuming plain text password for simplicity
+                expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+                payload = {
+                    'sub': child.id,
+                    'exp': expiration,
+                    'role': child.role
+                }
+                token = jwt.encode(payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
+
+                return jsonify({"token": token}), 200
+            else:
+                return jsonify({"message": "Invalid credentials"}), 401
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    return jsonify({"message": "Invalid request method"}), 405
 
 
-                return jsonify({"message": "Login Successful"}), 200
 
-@auth.route("/test")
-@login_required
-def test():
-    return jsonify({"message": "User is logged in!"})
+

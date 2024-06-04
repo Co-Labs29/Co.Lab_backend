@@ -1,20 +1,22 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Child, Goal, db, Parent
-from flask_login import current_user
 
 
 site = Blueprint('site', __name__)
 
 @site.route('/add_funds', methods=['POST'])
+@jwt_required()
 def add_funds():
     try:
         data = request.get_json()
         child_id = data.get("child_id")
         amount = float(data.get("amount"))
         
-        child = Child.query.get(child_id)
+        current_user_id = get_jwt_identity()
+        child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
-            return jsonify({"error": "child not found"}), 404
+            return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
         wallet = child.wallet
         if not wallet:
@@ -25,19 +27,18 @@ def add_funds():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-
 
 @site.route('/transfer/<int:child_id>', methods=['POST'])
+@jwt_required()
 def transfer(child_id):
     try:
         data = request.get_json()
-        child_id = data.get("child_id")
         amount = float(data.get("amount"))
+        current_user_id = get_jwt_identity()
 
-        child = Child.query.get(child_id)
+        child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
-            return jsonify({"error": "Child not found"}), 404
+            return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
         wallet = child.wallet
         if not wallet:
@@ -50,47 +51,31 @@ def transfer(child_id):
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-@site.route('/balance/<int:child_id>', methods=['GET'])
-def get_balance(child_id):
+
+@site.route('/goal_balance/<int:child_id>', methods=['GET'])
+@jwt_required()
+def goal_balance(child_id):
     try:
-        child = Child.query.get(child_id)
+       
+        current_user_id = get_jwt_identity()
+
+   
+        child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
-            return jsonify({"error": "Child not found"}), 404
+            return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
         wallet = child.wallet
         if not wallet:
             return jsonify({"error": "Wallet not found"}), 404
-        
-        balance = wallet.get_balance()
-        return jsonify({"balance": balance}), 200
-    
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
-
-
-    
-
-@site.route('/goal_balance/<int:child_id>', methods=['GET'])
-def goal_balance(child_id):
-    try:
-        child = Child.query.get(child_id)
-        if not child:
-            return jsonify({"error": "Child not found"})
-        
-        wallet = child.wallet
-        if not wallet:
-            return jsonify({"error": "Amount not found"}), 404
         
         goal_balance = wallet.goal_account
         return jsonify({"balance": goal_balance}), 200
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
 
 @site.route('/create_goal/<int:child_id>', methods=['POST'])
+@jwt_required()
 def create_goal(child_id):
     try:
         data = request.get_json()
@@ -100,9 +85,13 @@ def create_goal(child_id):
         link = data.get('link')
         description = data.get('description')
 
-        child = Child.query.get(child_id)
+       
+        current_user_id = get_jwt_identity()
+
+       
+        child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
-            return jsonify({"error": "Child not found"}), 404
+            return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
         wallet = child.wallet
         if not wallet:
@@ -115,8 +104,12 @@ def create_goal(child_id):
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
     
 @site.route('/update_goal/<int:goal_id>', methods=['PUT'])
+@jwt_required()
 def update_goal(goal_id):
     try:
         data = request.get_json()
@@ -125,10 +118,12 @@ def update_goal(goal_id):
         new_img = data.get("img")
         new_link = data.get("link")
         new_description = data.get("description")
+        current_user_id = get_jwt_identity()
 
-        goal = Goal.query.get(goal_id)
-        if not goal:
-            return jsonify({"error": "Could not find goal"}), 404
+        
+        goal = Goal.query.filter_by(id=goal_id).first()
+        if not goal or goal.child.parent_id != current_user_id:
+            return jsonify({"error": "Could not find goal or unauthorized access"}), 404
     
         goal.name = new_name
         goal.amount = new_amount
@@ -137,58 +132,72 @@ def update_goal(goal_id):
         goal.description = new_description
         goal.save()
 
-        return jsonify({"message": "Goal updated successsfully"}), 200
+        return jsonify({"message": "Goal updated successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @site.route("/delete_goal/<int:goal_id>", methods=["DELETE"])
+@jwt_required()
 def delete_goal(goal_id):
     try: 
-        goal = Goal.query.get(goal_id)
-        if not goal:
-            return jsonify({"error": "Goal not found"}), 404
+        
+        current_user_id = get_jwt_identity()
+
+        goal = Goal.query.filter_by(id=goal_id).first()
+        if not goal or goal.child.parent_id != current_user_id:
+            return jsonify({"error": "Goal not found or unauthorized access"}), 404
 
         db.session.delete(goal)
         db.session.commit()
 
         return jsonify({"message": "Goal deleted successfully"}), 200
-    
     except Exception as e:
         return jsonify({'Message': str(e)}), 500
-    
 
 @site.route('/info', methods=['GET'])
+@jwt_required()
 def get_info():
-    parent = Parent.query.get(current_user.id)
-    if not parent:
-        return jsonify({"error": "Parent not found"}), 404
-    
-    children = Child.query.filter_by(parent_id=current_user.id).all()
-    if not children:
-        return jsonify({"error": "Children not found"}), 404
+    try:
+        current_user_id = get_jwt_identity()
+        print(f'current_user_id {current_user_id}')
+        parent = Parent.query.get(current_user_id)
+        if parent:
+           
+            children = Child.query.filter_by(parent_id=current_user_id).all()
+        else:
+            
+            child = Child.query.get(current_user_id)
+            if not child:
+                return jsonify({"error": "Child not found"}), 404
+            parent = Parent.query.get(child.parent_id)
+            if not parent:
+                return jsonify({"error": "Parent not found"}), 404
+           
+            children = Child.query.filter_by(parent_id=parent.id).all()
 
-    child_info = []
-    for child in children:
-        child_info.append({
-            "child_id": child.id,
-            "username": child.username,
-            "img": child.img,
-            "role": child.role,
-            "chores": [chore.name for chore in child.chores],  
-            "wallet": {
-                "amount": child.wallet.amount
-            },
-            "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "description": goal.description, "img": goal.img, 
-                        "link": goal.link } for goal in child.goals]  
-        })
+        
+        if not children:
+            return jsonify({"error": "Children not found"}), 404
 
-    return jsonify(child_info), 200
+        child_info = []
+        for child in children:
+            child_info.append({
+                "parent_id": child.parent.id,
+                "child_id": child.id,
+                "username": child.username,
+                "img": child.img,
+                "role": child.role,
+                "chores": [chore.name for chore in child.chores],  
+                "wallet": {
+                    "amount": child.wallet.amount
+                },
+                "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "description": goal.description, "img": goal.img, 
+                            "link": goal.link } for goal in child.goals]  
+            })
 
-
-
-
-
-
+        return jsonify(child_info), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -231,4 +240,5 @@ def get_child_info(child_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+
 
