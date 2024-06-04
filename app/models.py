@@ -102,6 +102,7 @@ class Goal(db.Model):
     child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=False)
     name = db.Column(db.String, nullable=False)
     amount = db.Column(db.Float, nullable=False)
+    paid = db.Column(db.Float, nullable=True, default=0)
     img = db.Column(db.String, nullable=True)
     link = db.Column(db.String, nullable=True)
     description = db.Column(db.Text, nullable=True)

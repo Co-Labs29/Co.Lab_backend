@@ -28,29 +28,44 @@ def add_funds():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @site.route('/transfer/<int:child_id>', methods=['POST'])
 @jwt_required()
 def transfer(child_id):
     try:
         data = request.get_json()
-        amount = float(data.get("amount"))
+        paid = float(data.get("paid"))
+        goal_id = int(data.get("goal_id")) 
+        
         current_user_id = get_jwt_identity()
 
         child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
             return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
+        goal = child.goals.filter_by(id=goal_id).first()
+        if not goal:
+            return jsonify({"error": "Goal not found"}), 404
+        
         wallet = child.wallet
         if not wallet:
-            return jsonify({"error": "wallet not found"}), 404
+            return jsonify({"error": "Wallet not found"}), 404
         
-        if wallet.transfer_amount(amount):
-            return jsonify({"message": "funds transferred successfully"}), 200
+        if goal.paid >= goal.amount:
+            return jsonify({"error": "Goal has already been fully paid"}), 400
+        
+        
+        if wallet.transfer_amount(paid):
+            goal.paid += paid
+            wallet.amount -= paid
+            db.session.commit()
+            return jsonify({"message": "Funds transferred successfully"}), 200
         else:
             return jsonify({"error": "Insufficient funds in main account"}), 400
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @site.route('/goal_balance/<int:child_id>', methods=['GET'])
 @jwt_required()
@@ -115,6 +130,7 @@ def update_goal(goal_id):
         data = request.get_json()
         new_name = data.get("name")
         new_amount = float(data.get("amount"))
+        new_paid = float(data.get('paid'))
         new_img = data.get("img")
         new_link = data.get("link")
         new_description = data.get("description")
@@ -127,6 +143,7 @@ def update_goal(goal_id):
     
         goal.name = new_name
         goal.amount = new_amount
+        goal.paid = new_paid
         goal.img = new_img
         goal.link = new_link
         goal.description = new_description
@@ -191,7 +208,7 @@ def get_info():
                 "wallet": {
                     "amount": child.wallet.amount
                 },
-                "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "description": goal.description, "img": goal.img, 
+                "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "paid": goal.paid, "description": goal.description, "img": goal.img, 
                             "link": goal.link } for goal in child.goals]  
             })
 
