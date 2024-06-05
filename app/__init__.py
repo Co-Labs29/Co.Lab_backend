@@ -4,12 +4,18 @@ from flask_migrate import Migrate
 from app.models import db, Parent
 from .authentication.routes import auth
 from flask_cors import CORS
-from flask_login import LoginManager
 from .site.routes import site
 from .Parents.parent_routes import parents
 from .Chores.routes import chores
+from flask_jwt_extended import JWTManager
+from datetime import timedelta
 
 app = Flask(__name__)
+
+app.config['JWT_SECRET_KEY'] = Config.SECRET_KEY
+app.config['JWT_ACCESS_TOKENT_EXPIRES'] = timedelta(hours=1)
+
+jwt = JWTManager(app)
 
 app.config.from_object(Config)
 CORS(app)
@@ -22,12 +28,5 @@ app.register_blueprint(chores)
 
 db.init_app(app)
 migrate = Migrate(app, db)
-login_manager = LoginManager(app)
-
-@login_manager.user_loader
-def load_user(user_id):
-    return Parent.query.get(int(user_id))
 
 
-
-login_manager.init_app(app)
