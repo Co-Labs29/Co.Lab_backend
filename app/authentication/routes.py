@@ -98,6 +98,7 @@ def child_signup():
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
+            profile_img = data.get("selectedIcon")
             print("Got data!")
             print(f"Received data - username: {username}, Password: {password}, Role: {role}")
 
@@ -107,7 +108,7 @@ def child_signup():
                 return jsonify({"message": "All fields are required"}), 400
             print("Before creating child!")
             
-            child = Child(parent_id=parent_id, username=username, password=password, role=role)
+            child = Child(parent_id=parent_id, username=username, password=password, role=role, profile_img=profile_img)
             print("after creating child!")
 
             child.save()

@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 74ad9b77dd69
+Revision ID: fc3b4ffa9d09
 Revises: 
-Create Date: 2024-06-03 10:15:44.918317
+Create Date: 2024-06-04 20:58:56.642828
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '74ad9b77dd69'
+revision = 'fc3b4ffa9d09'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -33,6 +33,7 @@ def upgrade():
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('password', sa.String(), nullable=False),
     sa.Column('role', sa.String(length=10), nullable=False),
+    sa.Column('profile_img', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['parent_id'], ['parent.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username')
@@ -40,11 +41,14 @@ def upgrade():
     op.create_table('chores',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('child_id', sa.Integer(), nullable=False),
+    sa.Column('parent_id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('is_completed', sa.Boolean(), nullable=True),
     sa.Column('frequency', sa.String(), nullable=False),
     sa.Column('due_date', sa.Date(), nullable=True),
+    sa.Column('amount', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['child_id'], ['child.id'], ),
+    sa.ForeignKeyConstraint(['parent_id'], ['parent.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('wallet',
