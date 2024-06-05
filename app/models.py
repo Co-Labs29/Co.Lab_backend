@@ -24,7 +24,7 @@ class Child(db.Model, UserMixin):
     chores = db.relationship('Chores', backref='child', lazy=True)
     wallet = db.relationship('Wallet', uselist=False, back_populates='child')
     goals = db.relationship('Goal', back_populates='child', lazy=True)
-    profile_img = db.Column(db.String, nullable=False, default="Avatar1.svg")
+    img = db.Column(db.String, nullable=False, default="Avatar1.svg")
 
     def save(self):
         db.session.add(self)
@@ -36,7 +36,7 @@ class Child(db.Model, UserMixin):
             'parent_id': self.parent_id,
             'username': self.username,
             'role': self.role,
-            'img': self.profile_img
+            'img': self.img
         }
     
 

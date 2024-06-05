@@ -98,9 +98,9 @@ def child_signup():
             username = data.get("username")
             password = data.get("password")
             role = data.get("role")
-            profile_img = data.get("selectedIcon")
+            img = data.get("selectedIcon")
             print("Got data!")
-            print(f"Received data - username: {username}, Password: {password}, Role: {role}")
+            print(f"Received data - username: {username}, Password: {password}, Role: {role}, Parent_id: {parent_id}, img: {img}")
 
             if len(password) < 7:
                 return jsonify({'message': "Password must be at least 7 characters long"})
@@ -108,7 +108,7 @@ def child_signup():
                 return jsonify({"message": "All fields are required"}), 400
             print("Before creating child!")
             
-            child = Child(parent_id=parent_id, username=username, password=password, role=role, profile_img=profile_img)
+            child = Child(parent_id=parent_id, username=username, password=password, role=role, img=img)
             print("after creating child!")
 
             child.save()
