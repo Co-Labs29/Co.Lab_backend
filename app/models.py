@@ -38,6 +38,7 @@ class Child(db.Model, UserMixin):
     chores = db.relationship('Chores', backref='child', lazy=True)
     wallet = db.relationship('Wallet', uselist=False, back_populates='child')
     goals = db.relationship('Goal', back_populates='child', lazy=True)
+    img = db.Column(db.String, nullable=False, default="Avatar1.svg")
 
     def save(self):
         db.session.add(self)
@@ -56,16 +57,41 @@ class Child(db.Model, UserMixin):
 
 
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'parent_id': self.parent_id,
+            'username': self.username,
+            'role': self.role,
+            'img': self.img
+        }
+    
+
 class Chores(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     child_id = db.Column(db.Integer, db.ForeignKey("child.id"), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"), nullable=False)
     name = db.Column(db.String, nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     frequency = db.Column(db.String, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)
+    amount = db.Column(db.Integer, nullable=False)
 
     def save(self):
         db.session.add(self)
         db.session.commit()
+        
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "child_id": self.child_id,
+            "parent_id": self.parent_id,
+            "name": self.name,
+            "is_completed": self.is_completed,
+            "frequency": self.frequency,
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "amount": self.amount
+        }
 
 class Wallet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
