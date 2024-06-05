@@ -1,5 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from datetime import datetime, timedelta, timezone
+import jwt
+import pytz
 
 db = SQLAlchemy()
 
@@ -15,6 +18,16 @@ class Parent(db.Model, UserMixin):
         db.session.add(self)
         db.session.commit()
 
+    def get_jwt_token(self, secret_key):
+        expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+        payload = {
+            'sub': self.id,
+            'exp': expiration,
+            'role': self.role
+        }
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
+        return token.decode('utf-8')
+
 class Child(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'), nullable=False)
@@ -29,6 +42,19 @@ class Child(db.Model, UserMixin):
     def save(self):
         db.session.add(self)
         db.session.commit()
+
+
+    def get_jwt_token(self, secret_key):
+        expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+        payload = {
+            'sub': self.id,
+            'exp': expiration,
+            'role': self.role
+        }
+        token = jwt.encode(payload, secret_key, algorithm='HS256')
+        return token.decode('utf-8')
+
+
 
 class Chores(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -76,6 +102,7 @@ class Goal(db.Model):
     child_id = db.Column(db.Integer, db.ForeignKey('child.id'), nullable=False)
     name = db.Column(db.String, nullable=False)
     amount = db.Column(db.Float, nullable=False)
+    paid = db.Column(db.Float, nullable=True, default=0)
     img = db.Column(db.String, nullable=True)
     link = db.Column(db.String, nullable=True)
     description = db.Column(db.Text, nullable=True)
