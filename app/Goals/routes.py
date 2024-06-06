@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import Child, Goal, db, Parent, Chores
+from app.models import Child, Goal, db, Parent
 
 
 site = Blueprint('site', __name__)

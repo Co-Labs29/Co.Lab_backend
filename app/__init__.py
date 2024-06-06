@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from app.models import db, Parent
 from .authentication.routes import auth
 from flask_cors import CORS
-from .site.routes import site
+from .Goals.routes import site
 from .Parents.parent_routes import parents
 from .Chores.routes import chores
 from flask_jwt_extended import JWTManager
