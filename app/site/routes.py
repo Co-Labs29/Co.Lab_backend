@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import Child, Goal, db, Parent
+from app.models import Child, Goal, db, Parent, Chores
 
 
 site = Blueprint('site', __name__)
@@ -204,7 +204,7 @@ def get_info():
                 "username": child.username,
                 "img": child.img,
                 "role": child.role,
-                "chores": [chore.name for chore in child.chores],  
+                "chores": [{"name": chores.name, "amount":chores.amount} for chores in child.chores],  
                 "wallet": {
                     "amount": child.wallet.amount
                 },
