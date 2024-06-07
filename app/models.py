@@ -17,6 +17,14 @@ class Parent(db.Model, UserMixin):
     def save(self):
         db.session.add(self)
         db.session.commit()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'first_name': self.first_name,
+            'email': self.email,
+            'role': self.role
+        }
 
     def get_jwt_token(self, secret_key):
         expiration = datetime.now(pytz.utc) + timedelta(hours=1)
