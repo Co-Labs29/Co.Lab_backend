@@ -41,7 +41,7 @@ def add_child_details_to_chore(chore):
             "child_id": child.id,
             "child_username": child.username,
             "child_role": child.role,
-            "child_img": child.profile_img
+            "child_img": child.img
         })
         return chore_dict
     else:
