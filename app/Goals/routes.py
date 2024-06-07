@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.models import Child, Goal, db, Parent
+from app.models import Child, Goal, db, Parent, Wallet
 
 
 site = Blueprint('site', __name__)
@@ -29,42 +29,56 @@ def add_funds():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+
+
 @site.route('/transfer/<int:child_id>', methods=['POST'])
 @jwt_required()
 def transfer(child_id):
     try:
         data = request.get_json()
         paid = float(data.get("paid"))
-        goal_id = int(data.get("goal_id")) 
-        
+        goal_id = int(data.get("goal_id"))
+
+        if paid <= 0:
+            return jsonify({"error": "Transfer amount must be positive"}), 400
+
         current_user_id = get_jwt_identity()
 
         child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
         if not child:
             return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
-        
-        goal = child.goals.filter_by(id=goal_id).first()
+
+        goal = Goal.query.filter_by(id=goal_id, child_id=child.id).first()
         if not goal:
             return jsonify({"error": "Goal not found"}), 404
-        
-        wallet = child.wallet
+
+        wallet = Wallet.query.filter_by(id=child.wallet.id).first()
         if not wallet:
             return jsonify({"error": "Wallet not found"}), 404
-        
+
         if goal.paid >= goal.amount:
             return jsonify({"error": "Goal has already been fully paid"}), 400
+
+        if wallet.amount < paid:
+            return jsonify({"error": "Insufficient funds in wallet"}), 400
         
+        if goal.paid + paid > goal.amount:
+            return jsonify({"error": "Transfer amount exceeds the goal amount"}), 400
         
-        if wallet.transfer_amount(paid):
-            goal.paid += paid
-            wallet.amount -= paid
-            db.session.commit()
-            return jsonify({"message": "Funds transferred successfully"}), 200
-        else:
-            return jsonify({"error": "Insufficient funds in main account"}), 400
+
+        goal.paid += paid
+        wallet.amount -= paid
+        db.session.commit()
+        print(f'goal.paid{goal.paid} wallet.amount{wallet.amount} goal.amount{goal.amount}')
         
+        return jsonify({"message": "Funds transferred successfully"}), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 
 
 @site.route('/goal_balance/<int:child_id>', methods=['GET'])
