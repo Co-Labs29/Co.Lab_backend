@@ -273,3 +273,21 @@ def get_child_info(child_id):
     
 
 
+@site.route('/goals/<int:goal_id>', methods = ["GET"])
+def get_goals(goal_id):
+    try:
+        goals = Goal.query.filter_by(id=goal_id)
+        goals_info = [
+            {
+                "id": goal.id,
+                "name": goal.name,
+                "amount": goal.amount,
+                "paid": goal.paid,
+                "img": goal.img,
+                "link": goal.link,
+                "description": goal.description
+            } for goal in goals
+    ]
+        return jsonify(goals_info), 200 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
