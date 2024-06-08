@@ -163,8 +163,8 @@ def child_login():
                     'role': child.role
                 }
                 token = jwt.encode(payload, current_app.config['JWT_SECRET_KEY'], algorithm='HS256')
-
-                return jsonify({"token": token}), 200
+                id = child.id
+                return jsonify({"token": token, "childId": id}), 200
             else:
                 return jsonify({"message": "Invalid credentials"}), 401
 
