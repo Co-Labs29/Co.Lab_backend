@@ -118,7 +118,7 @@ def create_goal(child_id):
         current_user_id = get_jwt_identity()
 
        
-        child = Child.query.filter_by(id=child_id, parent_id=current_user_id).first()
+        child = Child.query.filter_by(id=child_id, parent_id=Parent.id).first()
         if not child:
             return jsonify({"error": "Child not found or does not belong to the logged-in parent"}), 404
         
