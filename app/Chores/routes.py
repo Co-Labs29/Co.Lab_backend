@@ -63,3 +63,22 @@ def get_all_chores_by_parent_id(parent_id):
         print(f"Error: {e}")
         return jsonify({"message": "Error getting chores"}), 500
     
+@chores.route("/get_chores/<int:child_id>/<string:due_date>")
+def get_chores_by_child_and_due_date(child_id, due_date):
+    try:
+        # Assuming child_id and due_date are valid and correctly formatted
+        if not child_id:
+            return jsonify({"message": "Please select a child"})
+        if not due_date:
+            return jsonify({"message": "Please select a date"})f
+        chores = Chores.query.filter_by(child_id=child_id, due_date=due_date).all()
+        if not chores:
+            return jsonify({"message": "No chores found"}), 404  # Use 404 for "Not Found"
+        else:
+            chore_list = [chore.to_dict() for chore in chores]
+            return jsonify({"chores": chore_list}), 200
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "Error getting chores"}), 500
+    
+    
