@@ -23,6 +23,8 @@ def parent_signup():
                 return jsonify({'message': "Password must be at least 7 characters long"}), 400
             if not first_name or not email or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
+            if Parent.query.filter_by(email=email).first():
+                return jsonify({"error": "Email already exists"}), 400
 
             new_parent = Parent(first_name=first_name, email=email, password=password, role=role)
             db.session.add(new_parent)
@@ -109,6 +111,10 @@ def child_signup():
                 return jsonify({'message': "Password must be at least 7 characters long"}), 400
             if not username or not password or not role:
                 return jsonify({"message": "All fields are required"}), 400
+            existing_child = Child.query.filter_by(username=username).first()
+            if existing_child:
+                return jsonify({"error": "Username already exists. Please choose a different username."}), 400
+
 
             child = Child(parent_id=parent_id, username=username, password=password, role=role, img=img)
             print(f'child: {child}')

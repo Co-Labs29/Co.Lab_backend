@@ -70,7 +70,7 @@ def get_chores_by_child_and_due_date(child_id, due_date):
         if not child_id:
             return jsonify({"message": "Please select a child"})
         if not due_date:
-            return jsonify({"message": "Please select a date"})f
+            return jsonify({"message": "Please select a date"})
         chores = Chores.query.filter_by(child_id=child_id, due_date=due_date).all()
         if not chores:
             return jsonify({"message": "No chores found"}), 404  # Use 404 for "Not Found"
