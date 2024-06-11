@@ -124,7 +124,7 @@ def child_signup():
             wallet = Wallet(child_id=child.id, amount=0.0)
             wallet.save()
 
-            expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+            expiration = datetime.now(pytz.utc) + timedelta(weeks=1)
             payload = {
                 'sub': child.id,
                 'exp': expiration,

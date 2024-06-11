@@ -27,7 +27,7 @@ class Parent(db.Model, UserMixin):
         }
 
     def get_jwt_token(self, secret_key):
-        expiration = datetime.now(pytz.utc) + timedelta(hours=1)
+        expiration = datetime.now(pytz.utc) + timedelta(weeks=1)
         payload = {
             'sub': self.id,
             'exp': expiration,
