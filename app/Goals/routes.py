@@ -29,10 +29,6 @@ def add_funds():
         return jsonify({"error": str(e)}), 500
 
 
-
-
-
-
 @site.route('/transfer/<int:child_id>', methods=['POST'])
 @jwt_required()
 def transfer(child_id):

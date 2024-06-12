@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import Child, Chores
 
+
 chores = Blueprint("chores", __name__)
 
 @chores.route("/add_chore/<child_id>/<parent_id>", methods=["POST"])
@@ -53,7 +54,7 @@ def add_child_details_to_chore(chore):
 def get_all_chores_by_parent_id(parent_id):
     try:
         if not parent_id:
-            return jsonify({"message": "Parent not found"}), 400
+            return jsonify({"message": "Parent not found"})
         print("Parent_id ===>",parent_id)
         all_chores = Chores.query.filter_by(parent_id=parent_id).all()
         chores_list = [add_child_details_to_chore(chore) for chore in all_chores]
@@ -80,5 +81,20 @@ def get_chores_by_child_and_due_date(child_id, due_date):
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"message": "Error getting chores"}), 500
+    
+@chores.route("/update_chore_status/<int:chore_id>", methods=["PUT"])
+def update_chore_status_by_id(chore_id):
+    try:
+        data = request.json
+        chore = Chores.query.get(chore_id)
+        if not chore:
+            return jsonify({"message": "Chore not found"}), 404
+        if "status" in data:
+            chore.status = data['status']
+            chore.save()
+            return jsonify({"message": "Chore status updated successfully"}), 200
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"message": "Error updating chore"}), 500
     
     
