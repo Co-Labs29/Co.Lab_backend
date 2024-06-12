@@ -15,7 +15,7 @@ def get_notifications(parent_id):
     for child in children:
        
         completed_goals = Goal.query.filter_by(child_id=child.id, complete=True).all()
-        completed_chores = Chores.query.filter_by(child_id=child.id, status='complete').all()
+        completed_chores = Chores.query.filter_by(child_id=child.id, status='completed').all()
 
        
         for goal in completed_goals:
