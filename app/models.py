@@ -80,7 +80,7 @@ class Chores(db.Model):
     child_id = db.Column(db.Integer, db.ForeignKey("child.id"), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"), nullable=False)
     name = db.Column(db.String, nullable=False)
-    is_completed = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String, default="not_completed")
     frequency = db.Column(db.String, nullable=False)
     due_date = db.Column(db.Date, nullable=True)
     amount = db.Column(db.Integer, nullable=False)
@@ -95,7 +95,7 @@ class Chores(db.Model):
             "child_id": self.child_id,
             "parent_id": self.parent_id,
             "name": self.name,
-            "is_completed": self.is_completed,
+            "status": self.status,
             "frequency": self.frequency,
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "amount": self.amount
