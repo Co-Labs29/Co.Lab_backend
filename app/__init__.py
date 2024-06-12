@@ -9,6 +9,7 @@ from .Parents.parent_routes import parents
 from .Chores.routes import chores
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
+from .Notifications.routes import notifications
 
 app = Flask(__name__)
 
@@ -24,6 +25,7 @@ app.register_blueprint(auth)
 app.register_blueprint(site)
 app.register_blueprint(parents)
 app.register_blueprint(chores)
+app.register_blueprint(notifications)
 
 
 db.init_app(app)

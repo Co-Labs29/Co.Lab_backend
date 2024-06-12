@@ -288,6 +288,22 @@ def get_goals(goal_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    
+
+
+@site.route('/Complete/<int:goal_id>', methods=["POST"])
+def complete_goals(goal_id):
+    goal = Goal.query.filter_by(id=goal_id).first()
+    if goal:
+        data = request.json
+        complete = data.get('complete')  
+        if complete is not None:  
+            goal.complete = complete 
+            db.session.commit()  
+            return jsonify({'message': 'Goal completion status updated successfully.'}), 200
+        else:
+            return jsonify({'error': 'No "complete" data provided in the request.'}), 400
+    else:
+        return jsonify({'error': 'Goal not found.'}), 404
+
 
 
