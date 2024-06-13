@@ -214,7 +214,7 @@ def get_info():
                 "username": child.username,
                 "img": child.img,
                 "role": child.role,
-                "chores": [{"name": chores.name, "amount":chores.amount} for chores in child.chores],  
+                "chores": [{"name": chores.name, "amount":chores.amount, "status": chores.status} for chores in child.chores],  
                 "wallet": {
                     "amount": child.wallet.amount
                 },
