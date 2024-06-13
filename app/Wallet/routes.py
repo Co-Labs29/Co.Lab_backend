@@ -4,8 +4,8 @@ from app.models import Chores, Wallet
 
 wallet = Blueprint('wallet', __name__)
 
-
-def add_funds_to_wallet(child_id: int, chore_id: int):
+@wallet.route("/add_funds_to_wallet/<int:child_id>/<int:chore_id>", methods=["PUT"])
+def add_funds_to_wallet(child_id: int, chore_id: int,):
     try:
         # Log the child_id and chore_id for debugging
         print("Child_id ====>", child_id)
