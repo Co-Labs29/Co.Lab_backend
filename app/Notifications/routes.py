@@ -21,6 +21,7 @@ def get_notifications(parent_id):
         for goal in completed_goals:
             notification = {
                 'child_name': child.username,
+                'child_img': child.img,
                 'type': 'goal',
                 'name': goal.name
             }
@@ -28,6 +29,7 @@ def get_notifications(parent_id):
         for chore in completed_chores:
             notification = {
                 'child_name': child.username,
+                'child_img': child.img,
                 'type': 'chore',
                 'name': chore.name
             }
