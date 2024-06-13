@@ -10,6 +10,7 @@ from .Chores.routes import chores
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from .Notifications.routes import notifications
+from .Wallet.routes import wallet
 
 app = Flask(__name__)
 
@@ -26,6 +27,7 @@ app.register_blueprint(site)
 app.register_blueprint(parents)
 app.register_blueprint(chores)
 app.register_blueprint(notifications)
+app.register_blueprint(wallet)
 
 
 db.init_app(app)
