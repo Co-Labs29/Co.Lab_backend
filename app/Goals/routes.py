@@ -187,13 +187,14 @@ def get_info():
     try:
         current_user_id = get_jwt_identity()
         print(f'current_user_id {current_user_id}')
-        parent = Parent.query.get(current_user_id)
+        parent = Parent.query.filter_by(id=current_user_id, role="parent").first()
         if parent:
-           
-            children = Child.query.filter_by(parent_id=current_user_id).all()
+            print("In parent if")
+            children = Child.query.filter_by(parent_id=parent.id).all()
         else:
-            
+            print("In the else")
             child = Child.query.get(current_user_id)
+            print(child)
             if not child:
                 return jsonify({"error": "Child not found"}), 404
             parent = Parent.query.get(child.parent_id)
@@ -201,6 +202,9 @@ def get_info():
                 return jsonify({"error": "Parent not found"}), 404
            
             children = Child.query.filter_by(parent_id=parent.id).all()
+            print(parent)
+            print(child)
+            print(children)
 
         
         if not children:
