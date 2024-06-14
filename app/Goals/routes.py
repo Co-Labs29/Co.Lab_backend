@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models import Child, Goal, db, Parent, Wallet
+import jwt
 
 
 site = Blueprint('site', __name__)
@@ -181,44 +182,56 @@ def delete_goal(goal_id):
     except Exception as e:
         return jsonify({'Message': str(e)}), 500
 
+
+def decode_jwt_token(token):
+    try:
+        payload = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return 'Signature expired. Please log in again.', 401
+    except jwt.InvalidTokenError:
+        return 'Invalid token. Please log in again.', 401
+
 @site.route('/info', methods=['GET'])
-@jwt_required()
 def get_info():
     try:
-        current_user_id = get_jwt_identity()
+        token = request.headers.get('Authorization').split()[1]
+        payload = decode_jwt_token(token)
+
+        current_user_id = payload['sub']
+        current_user_role = payload.get('role') 
+
         print(f'current_user_id {current_user_id}')
-        
-        
-        parent = Parent.query.filter_by(id=current_user_id).first()
-        
-        if parent or parent.role == "parent":
+        print(f'current_user_role {current_user_role}')
+
+        if current_user_role == "Parent":
             print("User is a parent")
-          
-            children = Child.query.filter_by(parent_id=parent.id).all()
-        else:
-            print("User is a child or has no parent role")
-          
-            child = Child.query.get(current_user_id)
-            print(child)
-            
-            if not child:
-                return jsonify({"error": "Child not found"}), 404
-                
-            
-            parent = Parent.query.get(child.parent_id)
-            
+
+            parent = Parent.query.filter_by(id=current_user_id).first()
             if not parent:
                 return jsonify({"error": "Parent not found"}), 404
-                
-           
+
             children = Child.query.filter_by(parent_id=parent.id).all()
-            print(parent)
-            print(child)
-            print(children)
-        
+
+        elif current_user_role == "Child":
+            print("User is a child")
+
+            child = Child.query.get(current_user_id)
+            if not child:
+                return jsonify({"error": "Child not found"}), 404
+
+            parent = Parent.query.get(child.parent_id)
+            if not parent:
+                return jsonify({"error": "Parent not found"}), 404
+
+            children = Child.query.filter_by(parent_id=parent.id).all()
+
+        else:
+            return jsonify({"error": "Invalid role"}), 400
+
         if not children:
             return jsonify({"error": "Children not found"}), 404
-        
+
         child_info = []
         for child in children:
             child_info.append({
@@ -227,17 +240,19 @@ def get_info():
                 "username": child.username,
                 "img": child.img,
                 "role": child.role,
-                "chores": [{"name": chore.name, "amount": chore.amount, "status": chore.status} for chore in child.chores],  
+                "chores": [{"name": chore.name, "amount": chore.amount, "status": chore.status} for chore in child.chores],
                 "wallet": {
                     "amount": child.wallet.amount
                 },
-                "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "paid": goal.paid, "description": goal.description, "img": goal.img, 
-                            "link": goal.link} for goal in child.goals]  
+                "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "paid": goal.paid, "description": goal.description, "img": goal.img,
+                            "link": goal.link} for goal in child.goals]
             })
-        
+
         return jsonify(child_info), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 
