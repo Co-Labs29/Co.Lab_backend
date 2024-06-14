@@ -187,29 +187,38 @@ def get_info():
     try:
         current_user_id = get_jwt_identity()
         print(f'current_user_id {current_user_id}')
-        parent = Parent.query.filter_by(id=current_user_id, role="parent").first()
-        if parent:
-            print("In parent if")
+        
+        
+        parent = Parent.query.filter_by(id=current_user_id).first()
+        
+        if parent or parent.role == "parent":
+            print("User is a parent")
+          
             children = Child.query.filter_by(parent_id=parent.id).all()
         else:
-            print("In the else")
+            print("User is a child or has no parent role")
+          
             child = Child.query.get(current_user_id)
             print(child)
+            
             if not child:
                 return jsonify({"error": "Child not found"}), 404
+                
+            
             parent = Parent.query.get(child.parent_id)
+            
             if not parent:
                 return jsonify({"error": "Parent not found"}), 404
+                
            
             children = Child.query.filter_by(parent_id=parent.id).all()
             print(parent)
             print(child)
             print(children)
-
         
         if not children:
             return jsonify({"error": "Children not found"}), 404
-
+        
         child_info = []
         for child in children:
             child_info.append({
@@ -218,17 +227,18 @@ def get_info():
                 "username": child.username,
                 "img": child.img,
                 "role": child.role,
-                "chores": [{"name": chores.name, "amount":chores.amount, "status": chores.status} for chores in child.chores],  
+                "chores": [{"name": chore.name, "amount": chore.amount, "status": chore.status} for chore in child.chores],  
                 "wallet": {
                     "amount": child.wallet.amount
                 },
                 "goals": [{"id": goal.id, "name": goal.name, "amount": goal.amount, "paid": goal.paid, "description": goal.description, "img": goal.img, 
-                            "link": goal.link } for goal in child.goals]  
+                            "link": goal.link} for goal in child.goals]  
             })
-
+        
         return jsonify(child_info), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 
