@@ -10,7 +10,7 @@ from .Chores.routes import chores
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from .Notifications.routes import notifications
-from .Wallet.routes import wallet
+from .Wallet.route import wallet
 
 app = Flask(__name__)
 
