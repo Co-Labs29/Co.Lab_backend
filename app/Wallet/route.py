@@ -32,6 +32,3 @@ def add_funds_to_wallet(child_id: int, chore_id: int,):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 import logging
+from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from datetime import datetime, timedelta
 from app.models import Parent, Child, db, Wallet
@@ -19,14 +20,16 @@ def parent_signup():
             email = data.get("email")
             password = data.get("password")
             role = data.get("role")
-            if len(password) < 7:
-                return jsonify({'message': "Password must be at least 7 characters long"}), 400
+
             if not first_name or not email or not password or not role:
                 return jsonify({"error": "All fields are required"}), 400
+            if len(password) < 7:
+                return jsonify({'message': "Password must be at least 7 characters long"}), 400
             if Parent.query.filter_by(email=email).first():
                 return jsonify({"error": "Email already exists"}), 400
 
-            new_parent = Parent(first_name=first_name, email=email, password=password, role=role)
+            hashed_password = generate_password_hash(password)
+            new_parent = Parent(first_name=first_name, email=email, password=hashed_password, role=role)
             db.session.add(new_parent)
             db.session.commit()
 
@@ -47,7 +50,9 @@ def parent_signup():
     except KeyError as e:
         return jsonify({"error": f"Missing key: {e.args[0]}"}), 400
     except Exception as e:
+        logging.error(f"Error occurred: {str(e)}")
         return jsonify({"error": f"Invalid form data: {str(e)}"}), 400
+
 
 @auth.route('/parent_signin', methods=['POST'])
 def parent_signin():
@@ -63,7 +68,7 @@ def parent_signin():
 
             logged_user = Parent.query.filter_by(email=email, role=role.capitalize()).first()
 
-            if logged_user and logged_user.password == password:  # Assuming plain text password for simplicity
+            if logged_user and check_password_hash(logged_user.password, password):
                 child_ids = [child.id for child in logged_user.children]
 
                 expiration = datetime.now(pytz.utc) + timedelta(hours=1)
@@ -87,9 +92,11 @@ def parent_signin():
         except KeyError as e:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
+            logging.error(f"Error occurred: {str(e)}")
             return jsonify({"error": str(e)}), 500
 
     return jsonify({"message": "Invalid request method"}), 405
+
 
 @auth.route('/parent_logout')
 def parent_logout():
